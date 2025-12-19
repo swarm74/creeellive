@@ -6,16 +6,43 @@ import { ShoppingCart, Check, X, Zap, Shield, ExternalLink, MessageCircle } from
 
 export default function Products() {
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
+  
+  // 1. LIVE STATUS STATE (Default to Undetected while loading)
+  const [statuses, setStatuses] = useState<any>({
+    valorant: "Undetected",
+    fortnite: "Undetected",
+    rust: "Undetected"
+  });
+
+  // 2. FETCH REAL STATUS FROM API
+  useEffect(() => {
+    const fetchStatus = async () => {
+      try {
+        const res = await fetch('/api/status', { cache: 'no-store' });
+        const data = await res.json();
+        if (data) setStatuses((prev: any) => ({ ...prev, ...data }));
+      } catch (error) {
+        console.error("Failed to load status");
+      }
+    };
+    fetchStatus();
+  }, []);
+
+  // 3. HELPER FOR BADGE COLORS
+  const getStatusStyle = (statusText: string) => {
+    const s = (statusText || "undetected").toLowerCase();
+    if (s.includes("undetected")) return 'text-green-400 border-green-400/20 bg-green-400/10';
+    if (s.includes("detected")) return 'text-red-400 border-red-400/20 bg-red-400/10';
+    return 'text-yellow-400 border-yellow-400/20 bg-yellow-400/10'; // Updating/Maintenance
+  };
 
   // =========================================================================
-  // 1. DYNAMIC SCRIPT LOADER
+  // DYNAMIC SCRIPT LOADER (For Sell.App)
   // =========================================================================
   useEffect(() => {
     if (selectedProduct) {
       const oldScript = document.querySelector('script[src="https://cdn.sell.app/embed/script.js"]');
-      if (oldScript) {
-        oldScript.remove();
-      }
+      if (oldScript) oldScript.remove();
 
       const script = document.createElement('script');
       script.src = "https://cdn.sell.app/embed/script.js";
@@ -23,68 +50,50 @@ export default function Products() {
       document.body.appendChild(script);
 
       return () => {
-        if (document.body.contains(script)) {
-          document.body.removeChild(script);
-        }
+        if (document.body.contains(script)) document.body.removeChild(script);
       };
     }
   }, [selectedProduct]);
 
   // =========================================================================
-  // 2. CONFIGURATION (Your Correct IDs & Prices)
+  // PRODUCT CONFIGURATION
   // =========================================================================
   const products = [
     {
       id: 1,
       game: "VALORANT",
+      key: "valorant", // LINKS TO API STATUS
       title: "Valorant External",
-      status: "Undetected",
       features: ["Aimbot", "ESP", "MISC"],
       prices: { day: "$8.99", week: "$34.99", month: "$69.99", life: "$249.99" },
       storeId: "70364", 
-      ids: { 
-        day: "340959",   
-        week: "340965",  
-        month: "340967", 
-        life: "" // Ignored, handled by Discord link
-      }
+      ids: { day: "340959", week: "340965", month: "340967", life: "" }
     },
     {
       id: 2,
       game: "FORTNITE",
+      key: "fortnite", // LINKS TO API STATUS
       title: "Fortnite External",
-      status: "Undetected",
       features: ["Aimbot", "ESP", "NISC"],
       prices: { day: "$7.99", week: "$27.99", month: "$54.99", life: "$200.00" },
       storeId: "70364", 
-      ids: { 
-        day: "340960",    
-        week: "340964",   
-        month: "340966",  
-        life: ""    
-      }
+      ids: { day: "340960", week: "340964", month: "340966", life: "" }
     },
     {
       id: 3,
       game: "RUST",
+      key: "rust", // LINKS TO API STATUS
       title: "Rust External",
-      status: "Undetected",
       features: ["Aimbot/Silent", "ESP", "Recoil/Troll"],
       prices: { day: "$8.99", week: "$24.99", month: "$59.99", life: "$199.99" },
       storeId: "70364", 
-      ids: { 
-        day: "340968",    
-        week: "340969",   
-        month: "340970",  
-        life: ""    
-      }
+      ids: { day: "340968", week: "340969", month: "340970", life: "" }
     }
   ];
 
   return (
     <div className="min-h-screen bg-[#0f172a] text-slate-200 font-sans selection:bg-[#6366f1] selection:text-white pb-20 relative">
       
-      {/* LOAD CSS GLOBALLY */}
       <link href="https://cdn.sell.app/embed/style.css" rel="stylesheet"/>
 
       {/* NAVBAR */}
@@ -118,35 +127,41 @@ export default function Products() {
 
       {/* PRODUCTS GRID */}
       <div className="max-w-7xl mx-auto px-6 grid md:grid-cols-3 gap-8">
-        {products.map((product) => (
-          <div key={product.id} className="bg-[#1e293b]/50 rounded-3xl p-1 border border-white/5 hover:border-[#6366f1]/50 transition-all duration-300 hover:-translate-y-2 group">
-            <div className="bg-[#0f172a] rounded-[22px] p-6 h-full flex flex-col relative overflow-hidden">
-              <div className="flex justify-between items-start mb-6">
-                <span className="text-xs font-bold text-[#6366f1] tracking-wider bg-[#6366f1]/10 px-3 py-1 rounded-full">
-                  {product.game}
-                </span>
-                <div className={`text-xs font-bold px-3 py-1 rounded-full border ${product.status === 'Undetected' ? 'text-green-400 border-green-400/20 bg-green-400/10' : 'text-yellow-400 border-yellow-400/20 bg-yellow-400/10'}`}>
-                  {product.status}
+        {products.map((product) => {
+          // GET CURRENT STATUS
+          const currentStatus = statuses[product.key] || "Undetected";
+
+          return (
+            <div key={product.id} className="bg-[#1e293b]/50 rounded-3xl p-1 border border-white/5 hover:border-[#6366f1]/50 transition-all duration-300 hover:-translate-y-2 group">
+              <div className="bg-[#0f172a] rounded-[22px] p-6 h-full flex flex-col relative overflow-hidden">
+                <div className="flex justify-between items-start mb-6">
+                  <span className="text-xs font-bold text-[#6366f1] tracking-wider bg-[#6366f1]/10 px-3 py-1 rounded-full">
+                    {product.game}
+                  </span>
+                  {/* DYNAMIC STATUS BADGE */}
+                  <div className={`text-xs font-bold px-3 py-1 rounded-full border ${getStatusStyle(currentStatus)}`}>
+                    {currentStatus}
+                  </div>
                 </div>
+                <h3 className="text-2xl font-bold text-white mb-6">{product.title}</h3>
+                <ul className="space-y-3 mb-8 flex-1">
+                  {product.features.map((feature, i) => (
+                    <li key={i} className="flex items-center text-sm text-slate-400">
+                      <Check className="w-4 h-4 text-[#6366f1] mr-3" />
+                      {feature}
+                    </li>
+                  ))}
+                </ul>
+                <button 
+                  onClick={() => setSelectedProduct(product)}
+                  className="w-full py-4 bg-[#6366f1] hover:bg-[#4f46e5] text-white font-bold rounded-xl transition-all shadow-lg shadow-[#6366f1]/20"
+                >
+                  View Options
+                </button>
               </div>
-              <h3 className="text-2xl font-bold text-white mb-6">{product.title}</h3>
-              <ul className="space-y-3 mb-8 flex-1">
-                {product.features.map((feature, i) => (
-                  <li key={i} className="flex items-center text-sm text-slate-400">
-                    <Check className="w-4 h-4 text-[#6366f1] mr-3" />
-                    {feature}
-                  </li>
-                ))}
-              </ul>
-              <button 
-                onClick={() => setSelectedProduct(product)}
-                className="w-full py-4 bg-[#6366f1] hover:bg-[#4f46e5] text-white font-bold rounded-xl transition-all shadow-lg shadow-[#6366f1]/20"
-              >
-                View Options
-              </button>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* PRICING MODAL (Pop-up) */}
@@ -172,7 +187,6 @@ export default function Products() {
                 { label: "Lifetime", price: selectedProduct.prices.life, id: selectedProduct.ids.life },
               ].map((tier, idx) => {
                 
-                // === SPECIAL CASE: LIFETIME (Goes to Discord) ===
                 if (tier.label === "Lifetime") {
                   return (
                     <a
@@ -191,11 +205,9 @@ export default function Products() {
                   );
                 }
 
-                // === STANDARD CASE: SELL.APP BUTTONS ===
                 return tier.id ? (
                   <button
                     key={idx}
-                    /* SELL.APP DATA ATTRIBUTES */
                     data-sell-store={selectedProduct.storeId}
                     data-sell-product={tier.id}
                     data-sell-darkmode="true"

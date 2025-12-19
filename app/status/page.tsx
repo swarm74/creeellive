@@ -85,7 +85,7 @@ export default function Status() {
           System <span className="text-[#6366f1]">Status</span>
         </h1>
         <p className="text-slate-400 max-w-xl mx-auto">
-          Real-time status updates for all Creel Live products.
+          Real-time status updates for all Creel products.
         </p>
       </header>
 
