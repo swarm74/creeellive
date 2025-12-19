@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 
-// Vercel cannot save files (fs.writeFileSync will crash).
-// We use a variable instead. Note: This resets if the server restarts.
+// VERCEL SAFE VERSION (No File Saving)
+// We use a variable to store status in memory.
+// Note: This resets if the website "goes to sleep" (no visitors for a while).
 let memoryStatus = {
   valorant: "Undetected",
   fortnite: "Undetected",
@@ -18,13 +19,13 @@ export async function POST(req: Request) {
     const body = await req.json();
     const { key, game, status } = body;
 
-    // CHECK YOUR KEY HERE
+    // 1. CHECK PASSWORD
     if (key !== "creel") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    // 2. UPDATE MEMORY (Do not use fs.writeFileSync)
     if (game && status) {
-        // Update the memory variable
         memoryStatus = {
             ...memoryStatus,
             [game]: status
@@ -33,6 +34,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ success: true, newStatus: memoryStatus });
   } catch (error) {
+    console.error("API Error:", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
